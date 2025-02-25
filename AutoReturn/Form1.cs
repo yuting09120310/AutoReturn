@@ -18,7 +18,7 @@ namespace AutoReturn
     public partial class Form1 : Form
     {
         private Settings _settings;
-        private const string SettingsUrl = "https://techshop.alexbase.net/uploads/Banner/setting.json";
+        private const string SettingsUrl = "https://techshop.alexbase.net//setting.json";
 
         /// <summary>
         /// Form1類的構造函數
@@ -112,6 +112,10 @@ namespace AutoReturn
                         string orderId = row["id"].ToString();
                         string order_no = row["order_no"].ToString();
                         string response = await SendRefundRequest(orderId, order_no);
+                        if (response == "退款異常，token無效")
+                        {
+                            throw new Exception("退款異常，token無效");
+                        }
                     }
                 }
                 else
@@ -125,6 +129,7 @@ namespace AutoReturn
             catch (Exception ex)
             {
                 MessageBox.Show($"發生錯誤: {ex.Message}", "錯誤", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                txtOutput.Text = $"發生錯誤: {ex.Message}";
             }
         }
 
@@ -199,6 +204,12 @@ namespace AutoReturn
                         response.EnsureSuccessStatusCode();
 
                         string content = await response.Content.ReadAsStringAsync();
+
+                        if(content.Contains("token无效，请重新登录"))
+                        {
+                            WriteLog($"退款異常，token無效", order_no, "error");
+                            return "退款異常，token無效";
+                        }
 
                         if (content.Contains("Lock wait timeout exceeded"))
                         {
